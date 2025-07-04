@@ -1,0 +1,39 @@
+    # Node modules
+    node_modules/
+    .env
+    .DS_Store
+
+    # Logs
+    *.log
+    npm-debug.log*
+    yarn-debug.log*
+    yarn-error.log*
+
+    # Build artifacts
+    dist/
+    build/
+    coverage/
+
+    # OS generated files
+    .vscode/
+    .idea/
+    .project
+    .classpath
+    .settings/
+    *.sublime-project
+    *.sublime-workspace
+
+    # Environment variables
+    .env
+    .env.local
+    .env.development.local
+    .env.test.local
+    .env.production.local
+
+    # npm package manager cache
+    .npm/
+    .yarn/
+
+    # Editor specific
+    *.swp
+    *.swo
