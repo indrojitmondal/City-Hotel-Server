@@ -124,6 +124,15 @@ async function run() {
       res.send(result);
     })
 
+    app.get('/admin-stats', verifyToken, verifyAdmin, async(req, res)=>{
+      const rooms= await apartmentCollection.estimatedDocumentCount();
+      const agreements = await agreementCollection.estimatedDocumentCount();
+      const availableRooms = rooms -agreements;
+      const users = await userCollection.estimatedDocumentCount();
+      const members= agreements;
+      res.send({rooms, agreements, availableRooms, users, members}); 
+    })
+
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
 
