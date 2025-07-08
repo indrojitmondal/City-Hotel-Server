@@ -224,8 +224,8 @@ async function run() {
       const rooms= await apartmentCollection.estimatedDocumentCount();
       const agreements = await agreementCollection.estimatedDocumentCount();
       const availableRooms = rooms -agreements;
-      const users = await userCollection.estimatedDocumentCount();
-      const members= agreements;
+      const users = (await userCollection.find({role: 'user'}).toArray()).length;
+      const members= (await userCollection.find({role:'member'}).toArray()).length;
       res.send({rooms, agreements, availableRooms, users, members}); 
     })
 
