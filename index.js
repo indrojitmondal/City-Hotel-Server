@@ -123,6 +123,14 @@ async function run() {
         res.send({admin});
      })
 
+     app.get('/members', async(req, res)=>{
+      const query= {
+        role: 'member'
+      }
+      const result = await userCollection.find(query).toArray();
+      res.send(result);
+     })
+
     // Get apartments 
     app.get('/apartments', async (req, res) => {
       const result = await apartmentCollection.find().toArray();
