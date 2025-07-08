@@ -82,6 +82,32 @@ async function run() {
         const result = await userCollection.insertOne(user);
         res.send(result);
       })
+     
+      app.get('/memberChecker/:email', verifyToken,  async (req, res) => {
+        const email = req.params.email;
+        const query = { email: email };
+        const user = await userCollection.findOne(query);
+    
+        let member = false;
+        if (user) {
+            member = user.role === 'member';
+        }
+    
+        res.send({ member });
+    });
+      app.patch('/users/:email', verifyToken, async(req, res)=>{
+        const email= req.params.email;
+        console.log(email);
+        const filter={
+          email: email
+        }
+        const updatedDoc={
+          $set: { role: 'member'}
+        }
+        const result= userCollection.updateOne(filter,updatedDoc);
+        res.send(result);
+
+      })
 
       app.get('/users/admin/:email', verifyToken, async(req, res)=>{
         const email = req.params.email;
