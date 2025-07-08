@@ -29,6 +29,7 @@ async function run() {
     const apartmentCollection = client.db("cityHotel").collection("apartments");
     const agreementCollection = client.db("cityHotel").collection("agreements");
     const userCollection = client.db("cityHotel").collection("users");
+    const announcementCollection = client.db("cityHotel").collection("announcements");
  //jwt related api 
  app.post('/jwt', async (req, res) => {
   const user = req.body;
@@ -124,6 +125,8 @@ async function run() {
         res.send(result);
       })
 
+
+
       app.get('/users/admin/:email', verifyToken, async(req, res)=>{
         const email = req.params.email;
         if(email != req.decoded.email){
@@ -136,6 +139,16 @@ async function run() {
            admin = user?.role === 'admin';
         }
         res.send({admin});
+     })
+
+     app.post('/announcements', verifyToken, verifyAdmin,  async(req, res)=>{
+       const announcement= req.body;
+       const result = await announcementCollection.insertOne(announcement);
+       res.send(result);
+     })
+     app.get('/announcements',  async(req, res)=>{
+      const result = await announcementCollection.find().toArray();
+      res.send(result);
      })
 
      app.get('/members', async(req, res)=>{
