@@ -98,7 +98,7 @@ async function run() {
     });
       app.patch('/users/:email', verifyToken, async(req, res)=>{
         const email= req.params.email;
-        console.log(email);
+        
         const filter={
           email: email
         }
@@ -151,7 +151,7 @@ async function run() {
       res.send(result);
      })
 
-     app.get('/members', async(req, res)=>{
+     app.get('/members', verifyToken, verifyAdmin, async(req, res)=>{
       const query= {
         role: 'member'
       }
@@ -179,12 +179,46 @@ async function run() {
       const result = await agreementCollection.insertOne(agreement);
       res.send(result);
     });
+    
     app.get('/agreement', async (req, res) => {
-      const email = req.query.email;
-      const query = { email: email };
-      const result = await agreementCollection.find(query).toArray();
+      const email = req.query?.email;
+      let result = [];
+    
+      if (email) {
+        const query = { email:  email};
+        result = await agreementCollection.find(query).toArray();
+      } else {
+        result = await agreementCollection.find().toArray();
+      }
+    
+      res.send(result);
+    });
+
+    app.patch('/agreement/:id', verifyToken, verifyAdmin, async(req, res)=>{
+      const id = req.params.id;
+      const query={
+        _id : new ObjectId(id)
+      }
+      const updatedDoc={
+        $set:{ status: 'checked'}
+      }
+      const result = await agreementCollection.updateOne(query, updatedDoc);
       res.send(result);
     })
+
+    app.delete('/agreement/:id', verifyToken, verifyAdmin,   async(req, res)=>{
+      const id = req.params.id;
+      const query={
+        _id : new ObjectId(id)
+      }
+     
+      const result = await agreementCollection.deleteOne(query);
+      res.send(result);
+    })
+
+
+
+  
 
     app.get('/admin-stats', verifyToken, verifyAdmin, async(req, res)=>{
       const rooms= await apartmentCollection.estimatedDocumentCount();
