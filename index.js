@@ -30,6 +30,7 @@ async function run() {
     const agreementCollection = client.db("cityHotel").collection("agreements");
     const userCollection = client.db("cityHotel").collection("users");
     const announcementCollection = client.db("cityHotel").collection("announcements");
+    const couponCollection = client.db("cityHotel").collection("coupons");
  //jwt related api 
  app.post('/jwt', async (req, res) => {
   const user = req.body;
@@ -216,7 +217,15 @@ async function run() {
       res.send(result);
     })
 
-
+   app.get('/coupons', async(req, res)=>{
+    const result = await couponCollection.find().toArray();
+    res.send(result);
+   })
+   app.post('/coupons', async(req, res)=>{
+    const coupon= req.body;
+    const result = await couponCollection.insertOne(coupon);
+    res.send(result);
+   })
 
   
 
