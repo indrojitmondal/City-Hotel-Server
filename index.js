@@ -269,7 +269,7 @@ async function run() {
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
     })
-
+    //  okk
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
 
