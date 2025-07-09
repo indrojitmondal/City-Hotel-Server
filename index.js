@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 require('dotenv').config();
+
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+
 const jwt = require('jsonwebtoken');
 
 const port = process.env.PORT || 5000;
@@ -31,6 +34,7 @@ async function run() {
     const userCollection = client.db("cityHotel").collection("users");
     const announcementCollection = client.db("cityHotel").collection("announcements");
     const couponCollection = client.db("cityHotel").collection("coupons");
+    const paymentCollection = client.db('cityHotel').collection('payments');
  //jwt related api 
  app.post('/jwt', async (req, res) => {
   const user = req.body;
@@ -236,6 +240,34 @@ async function run() {
       const users = (await userCollection.find({role: 'user'}).toArray()).length;
       const members= (await userCollection.find({role:'member'}).toArray()).length;
       res.send({rooms, agreements, availableRooms, users, members}); 
+    })
+
+    app.post('/create-payment-intent', async(req, res)=>{
+       const {price}= req.body;
+       const amount = parseInt(price)*100;
+       const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({clientSecret: paymentIntent.client_secret});
+    })
+
+    app.post('/payments', async(req, res)=>{
+      const payment = req.body;
+      const paymentResult= await paymentCollection.insertOne(payment);
+      console.log('payment Info', payment);
+      
+      const query={email: payment.email};
+      const deleteResult= agreementCollection.deleteOne(query);
+      res.send({paymentResult, deleteResult});
+    })
+    app.get('/paymentHistory/:email',verifyToken, async(req, res)=>{
+      const email= req.params.email;
+      const query={ email: email};
+      const result = await paymentCollection.find(query).toArray();
+      res.send(result);
     })
 
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
