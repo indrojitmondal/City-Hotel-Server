@@ -1,8 +1,12 @@
+
 const express = require('express');
 const app = express();
 const cors = require('cors');
 require('dotenv').config();
-
+const SSLCommerzPayment = require('sslcommerz-lts')
+const store_id = process.env.STORE_ID
+const store_passwd = process.env.STORE_PASS
+const is_live = false //true for live, false for sandbox
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 const jwt = require('jsonwebtoken');
@@ -15,6 +19,7 @@ app.use(express.json());
 
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { default: Swal } = require('sweetalert2');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.kk0ds.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -260,7 +265,7 @@ async function run() {
       console.log('payment Info', payment);
       
       const query={email: payment.email};
-      const deleteResult= agreementCollection.deleteOne(query);
+      const deleteResult= await agreementCollection.deleteOne(query);
       res.send({paymentResult, deleteResult});
     })
     app.get('/paymentHistory/:email',verifyToken, async(req, res)=>{
@@ -269,7 +274,91 @@ async function run() {
       const result = await paymentCollection.find(query).toArray();
       res.send(result);
     })
-    //  okay
+    
+    // SSLCommerz Method 
+    const tran_id= new ObjectId().toString();
+    app.post('/order', async(req, res)=>{
+     // console.log(req.body);
+     const apartment= req.body;
+     const data = {
+      total_amount: apartment?.rent,
+      currency: 'BDT',
+      tran_id: tran_id, // use unique tran_id for each api call
+      success_url: `https://a12-ph-server.vercel.app/payment/success/${tran_id}`,
+      fail_url: 'https://a12-ph-server.vercel.app/payment/fail',
+      cancel_url: 'http://localhost:3030/cancel',
+      ipn_url: 'http://localhost:3030/ipn',
+      shipping_method: 'Courier',
+      product_name: 'Computer.',
+      product_category: 'Electronic',
+      product_profile: 'general',
+      cus_name: 'Customer Name',
+      cus_email: apartment?.email,
+      cus_add1: 'Dhaka',
+      cus_add2: 'Dhaka',
+      cus_city: 'Dhaka',
+      cus_state: 'Dhaka',
+      cus_postcode: '1000',
+      cus_country: 'Bangladesh',
+      cus_phone: '01711111111',
+      cus_fax: '01711111111',
+      ship_name: 'Customer Name',
+      ship_add1: 'Dhaka',
+      ship_add2: 'Dhaka',
+      ship_city: 'Dhaka',
+      ship_state: 'Dhaka',
+      ship_postcode: 1000,
+      ship_country: 'Bangladesh',
+     };
+
+     console.log(data);
+     const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live)
+     sslcz.init(data).then(apiResponse => {
+         // Redirect the user to payment gateway
+         let GatewayPageURL = apiResponse.GatewayPageURL
+       //  res.redirect(GatewayPageURL)
+
+        // const finalOrder={
+        //   apartment,paidStatus: false, transactionId: tran_id
+        // }
+         res.send({url: GatewayPageURL});
+         console.log('Redirecting to: ', GatewayPageURL)
+     });
+
+     app.post('/payment/success/:tranId', async(req, res)=>{
+       console.log(req.params.tranId);
+       
+       const payment={
+        email: apartment?.email,
+        price: apartment?.rent,
+        transactionId: req.params.tranId,
+        date: new Date(), // utc date convert. use moment js too 
+        status: 'pending'
+    }
+
+       const paymentResult= await paymentCollection.insertOne(payment);
+       console.log('payment Info', payment);
+       
+       const query={email: payment.email};
+       console.log(query);
+       const deleteResult= await agreementCollection.deleteOne(query);
+       //res.send({paymentResult, deleteResult});
+       if(paymentResult.insertedId){
+        
+       res.redirect('https://city-hotel-7c0c3.web.app/dashboard/payment-history')
+       }
+       console.log(paymentResult);
+
+     })
+
+     app.post('/payment/fail', async(req, res)=>{
+       res.redirect('https://city-hotel-7c0c3.web.app/dashboard/make-payment');
+     })
+
+
+    })
+
+    //  okay...
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
 

@@ -36,3 +36,4 @@ coverage/
 # Editor specific
 *.swp
 *.swo
+.vercel
